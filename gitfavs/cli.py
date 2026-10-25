@@ -14,7 +14,7 @@ from pathlib import Path
 from . import __version__, colors, exporters, gitsync
 from .colors import paint
 from .store import (FILE_NAME, WEB_SCHEMES, Bookmark, GitFavsError, Library, clean, default_home, is_safe_href,
-                    normalize_tags, normalize_url)
+                    normalize_tags, normalize_url, read_config, write_config, CONFIG_FILE)
 
 EXPORT_NAME = "bookmarks.html"  # export automatico accanto al JSON
 UA = {"User-Agent": "Mozilla/5.0 (compatible; GitFavs)"}
@@ -322,7 +322,29 @@ def cmd_log(a) -> None:
 
 
 def cmd_path(a) -> None:
-    print(default_home() / "bookmarks.json")
+    if a.set or a.reset:
+        old = default_home()
+        cfg = read_config()
+        if a.reset:
+            cfg.pop("home", None)
+        else:
+            cfg["home"] = str(Path(a.set).expanduser().resolve())
+        write_config(cfg)
+        new = default_home()
+        colors.ok(f"cartella dati = {paint(str(new), 'cyan', 'underline')}  (config: {CONFIG_FILE})")
+        if new != old and (old / FILE_NAME).exists() and not (new / FILE_NAME).exists():
+            colors.warn(f"i dati esistenti sono rimasti in {old}: copiali in {new} per continuare a usarli")
+        return
+    home = default_home()
+    files = {"json": home / FILE_NAME, "html": home / EXPORT_NAME}
+    if a.which:
+        print(files[a.which])
+        return
+    print(f"{paint('cartella'.ljust(9), 'gray')}{paint(str(home), 'cyan')}")
+    files["config"] = CONFIG_FILE
+    for k, f in files.items():
+        state = "" if f.exists() else paint("  (non ancora creato)", "dim")
+        print(f"{paint(k.ljust(9), 'gray')}{paint(str(f), 'cyan', 'underline')}{state}")
 
 
 # -- parser ------------------------------------------------------------------
@@ -330,7 +352,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="gf",
         description="Gestore di bookmarks da terminale. Ogni modifica e' salvata con commit e push automatici.",
-        epilog="Dati in $GITFAVS_HOME (default ~/.gitfavs). NO_COLOR disattiva i colori.",
+        epilog="Cartella dati: `gf path` (default ~/.gitfavs, cambiabile con `gf path --set`). NO_COLOR disattiva i colori.",
     )
     p.add_argument("-V", "--version", action="version", version=f"GitFavs {__version__}")
     sub = p.add_subparsers(dest="cmd", metavar="comando")
@@ -400,7 +422,10 @@ def build_parser() -> argparse.ArgumentParser:
     add("sync", cmd_sync, "pull dal remote e push (utile con piu' computer)")
     s = add("log", cmd_log, "cronologia delle modifiche (git)")
     s.add_argument("-n", type=int, default=15)
-    add("path", cmd_path, "mostra il percorso del file JSON")
+    s = add("path", cmd_path, "mostra la posizione dei file JSON e HTML dei bookmarks")
+    s.add_argument("which", nargs="?", choices=["json", "html"], help="stampa solo il percorso di quel file (adatto a script)")
+    s.add_argument("--set", metavar="CARTELLA", help="cambia la cartella dati (salvata nel file di configurazione)")
+    s.add_argument("--reset", action="store_true", help="torna alla cartella predefinita (~/.gitfavs)")
     return p
 
 

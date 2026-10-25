@@ -1,7 +1,7 @@
 # GitFavs
 
 Bookmarks manager da riga di comando (Python ≥ 3.9, nessuna dipendenza). I bookmarks stanno in un unico
-file JSON (`~/.gitfavs/bookmarks.json`, cambiabile con `GITFAVS_HOME`) dentro un repository git:
+file JSON (`~/.gitfavs/bookmarks.json`, cambiabile con `gf path --set <cartella>`, salvato in `~/.gitfavs/config.json`) dentro un repository git:
 **ogni modifica fa commit e, se c'è un remote, push in automatico.**
 
 ## Installazione
@@ -28,7 +28,7 @@ pip install -e .        # crea il comando `gf`
 | `gf check [-T tag]` | trova i link non raggiungibili |
 | `gf remote [url]` | imposta il repository remoto per il push |
 | `gf sync` | pull + push (più computer) |
-| `gf log` / `path` | cronologia git / percorso del JSON |
+| `gf log` / `path` | cronologia git / percorso dei file JSON e HTML (`path json\|html` per un solo percorso, `path --set <cartella>` / `--reset` per cambiarlo) |
 
 ## Backup su GitHub
 

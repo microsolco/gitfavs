@@ -19,10 +19,26 @@ class GitFavsError(Exception):
     """Errore atteso, mostrato all'utente senza traceback."""
 
 
+CONFIG_FILE = Path.home() / ".gitfavs" / "config.json"
+
+
+def read_config() -> dict:
+    try:
+        data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def write_config(data: dict) -> None:
+    CONFIG_FILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    CONFIG_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def default_home() -> Path:
-    """$GITFAVS_HOME, altrimenti ~/.gitfavs (o ~/.bukmarks se esiste gia': dati della vecchia versione)."""
-    if env := os.environ.get("GITFAVS_HOME"):
-        return Path(env).expanduser()
+    """Cartella dati dal file di configurazione, altrimenti ~/.gitfavs (o ~/.bukmarks se esiste gia': vecchia versione)."""
+    if home := read_config().get("home"):
+        return Path(home).expanduser()
     new, legacy = Path.home() / ".gitfavs", Path.home() / ".bukmarks"
     return legacy if legacy.exists() and not new.exists() else new
 

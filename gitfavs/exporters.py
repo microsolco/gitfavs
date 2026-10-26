@@ -15,23 +15,26 @@ _CSS = """
 @media(prefers-color-scheme:dark){:root{--bg:#161514;--fg:#e7e5e4;--mut:#a8a29e;--line:#2b2927;--acc:#7aa2f7;--chip:#26241f}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-main{max-width:46rem;margin:0 auto;padding:3rem 1.25rem 4rem}
+main{max-width:84rem;margin:0 auto;padding:3rem 1.25rem 4rem}
 h1{font-size:1.5rem;margin:0 0 .25rem;letter-spacing:-.01em}
 .sub{color:var(--mut);font-size:.875rem;margin:0 0 1.5rem}
-input{width:100%;padding:.6rem .8rem;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:8px;margin-bottom:1.5rem}
+input{width:100%;max-width:28rem;padding:.6rem .8rem;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:8px;margin-bottom:1.75rem}
 input:focus{outline:2px solid var(--acc);outline-offset:1px}
-section{margin:0 0 2rem}
-h2{display:flex;align-items:baseline;gap:.5rem;margin:0 0 .25rem;font-size:1.0625rem;letter-spacing:-.005em}
+.cols{column-count:4;column-gap:1rem}
+@media(max-width:1100px){.cols{column-count:3}}
+@media(max-width:800px){.cols{column-count:2}}
+@media(max-width:520px){.cols{column-count:1}}
+section{break-inside:avoid;margin:0 0 1rem;padding:.9rem 1rem .6rem;border:1px solid var(--line);border-radius:10px}
+h2{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin:0 0 .5rem;padding-bottom:.5rem;border-bottom:1px solid var(--line);font-size:.9375rem;letter-spacing:-.005em}
 h2 small{color:var(--mut);font-size:.75rem;font-weight:400}
 .none{color:var(--mut)}
 ul{list-style:none;margin:0;padding:0}
-li{padding:.8rem 0;border-top:1px solid var(--line)}
-li:last-child{border-bottom:1px solid var(--line)}
-a{color:var(--acc);text-decoration:none;font-weight:600}
+li{padding:.4rem 0}
+a{color:var(--acc);text-decoration:none;font-weight:600;overflow-wrap:anywhere}
 a:hover{text-decoration:underline}
-.url{display:block;color:var(--mut);font-size:.8125rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.note{margin:.25rem 0 0;font-size:.875rem}
-.tag{display:inline-block;margin:.35rem .35rem 0 0;padding:0 .5rem;border-radius:999px;background:var(--chip);color:var(--mut);font-size:.75rem}
+.url{display:block;color:var(--mut);font-size:.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.note{margin:.2rem 0 0;font-size:.8125rem}
+.tag{display:inline-block;margin:.3rem .3rem 0 0;padding:0 .45rem;border:1px solid var(--line);border-radius:6px;color:var(--mut);font-size:.6875rem}
 [hidden]{display:none}
 """
 
@@ -43,8 +46,8 @@ secs.forEach(s=>{const v=s.querySelectorAll('li:not([hidden])').length;s.hidden=
 """
 
 
-def _row(b: Bookmark) -> str:
-    tags = "".join(f'<span class="tag">#{escape(t)}</span>' for t in b.tags)
+def _row(b: Bookmark, section: str | None = None) -> str:
+    tags = "".join(f'<span class="tag">#{escape(t)}</span>' for t in b.tags if t != section)
     note = f'<p class="note">{escape(b.note)}</p>' if b.note else ""
     search = escape(" ".join([b.title, b.url, *b.tags, b.note]).lower(), quote=True)
     href = escape(b.url if is_safe_href(b.url) else "#", quote=True)
@@ -75,7 +78,7 @@ def export_html(items: list[Bookmark], title: str = "Bookmarks") -> str:
         heading = f"#{escape(tag)}" if tag else '<span class="none">Senza tag</span>'
         sections.append(
             f"<section><h2>{heading}<small>{len(group)}</small></h2>"
-            f"<ul>{''.join(_row(b) for b in group)}</ul></section>"
+            f"<ul>{''.join(_row(b, tag) for b in group)}</ul></section>"
         )
     stamp = datetime.now().strftime("%d/%m/%Y")
     return (
@@ -86,7 +89,7 @@ def export_html(items: list[Bookmark], title: str = "Bookmarks") -> str:
         f"<h1>{escape(title)}</h1>"
         f'<p class="sub"><span id="n">{len(items)}</span> link · {max(len(sections), 0)} sezioni · aggiornato il {stamp}</p>'
         f'<input id="q" type="search" placeholder="Cerca per nome, indirizzo o tag…" autofocus>'
-        f"{''.join(sections)}<script>{_JS}</script></main></body></html>\n"
+        f'<div class="cols">{"".join(sections)}</div><script>{_JS}</script></main></body></html>\n'
     )
 
 

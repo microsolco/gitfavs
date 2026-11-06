@@ -11,24 +11,28 @@ from pathlib import Path
 from .store import GitFavsError, Bookmark, is_safe_href, normalize_tags, normalize_url
 
 _CSS = """
-:root{--bg:#fafaf9;--fg:#1c1917;--mut:#78716c;--line:#e7e5e4;--acc:#2563eb;--chip:#f0efed}
-@media(prefers-color-scheme:dark){:root{--bg:#161514;--fg:#e7e5e4;--mut:#a8a29e;--line:#2b2927;--acc:#7aa2f7;--chip:#26241f}}
+:root{--bg:#f0efec;--fg:#1c1917;--mut:#78716c;--line:#e2e0db;--acc:#2563eb}
+@media(prefers-color-scheme:dark){:root{--bg:#161514;--fg:#e7e5e4;--mut:#a8a29e;--line:#2b2927;--acc:#7aa2f7}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-main{max-width:84rem;margin:0 auto;padding:3rem 1.25rem 4rem}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+main{height:100vh;max-width:84rem;margin:0 auto;padding:1.5rem 1.25rem 1.25rem;display:flex;flex-direction:column}
 h1{font-size:1.5rem;margin:0 0 .25rem;letter-spacing:-.01em}
-.sub{color:var(--mut);font-size:.875rem;margin:0 0 1.5rem}
-input{width:100%;max-width:28rem;padding:.6rem .8rem;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:8px;margin-bottom:1.75rem}
+.sub{color:var(--mut);font-size:.875rem;margin:0 0 .75rem}
+input{width:100%;max-width:28rem;padding:.6rem .8rem;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:8px;margin-bottom:.75rem}
 input:focus{outline:2px solid var(--acc);outline-offset:1px}
-.cols{column-count:4;column-gap:1rem}
-@media(max-width:1100px){.cols{column-count:3}}
-@media(max-width:800px){.cols{column-count:2}}
-@media(max-width:520px){.cols{column-count:1}}
-section{break-inside:avoid;margin:0 0 1rem;padding:.9rem 1rem .6rem;border:1px solid var(--line);border-radius:10px}
-h2{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin:0 0 .5rem;padding-bottom:.5rem;border-bottom:1px solid var(--line);font-size:.9375rem;letter-spacing:-.005em}
+nav{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin-bottom:.9rem}
+nav button{cursor:pointer;font:inherit;font-size:.8125rem;color:var(--mut);background:transparent;border:1px solid var(--line);border-radius:999px;padding:.3rem .75rem}
+nav button:hover{color:var(--fg)}
+nav button.on{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+nav button small{margin-left:.4em;opacity:.65}
+#prev{margin-left:auto}
+section{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:hsl(var(--h,220) 45% 80% / .4)}
+@media(prefers-color-scheme:dark){section{background:hsl(var(--h,220) 35% 30% / .35)}}
+h2{display:flex;align-items:baseline;gap:.5rem;margin:0;padding:.75rem 1rem .5rem;font-size:.9375rem}
 h2 small{color:var(--mut);font-size:.75rem;font-weight:400}
 .none{color:var(--mut)}
-ul{list-style:none;margin:0;padding:0}
+ul{list-style:none;margin:0;padding:0 1rem 1rem;overflow-y:auto;min-height:0}
 li{padding:.4rem 0}
 a{color:var(--acc);text-decoration:none;font-weight:600;overflow-wrap:anywhere}
 a:hover{text-decoration:underline}
@@ -39,11 +43,36 @@ a:hover{text-decoration:underline}
 """
 
 _JS = """
-const q=document.getElementById('q'),rows=[...document.querySelectorAll('li')],secs=[...document.querySelectorAll('section')],n=document.getElementById('n');
-q.addEventListener('input',()=>{const t=q.value.toLowerCase().split(/\\s+/).filter(Boolean),ids=new Set();
-rows.forEach(r=>{const ok=t.every(x=>r.dataset.s.includes(x));r.hidden=!ok;if(ok)ids.add(r.dataset.id)});
-secs.forEach(s=>{const v=s.querySelectorAll('li:not([hidden])').length;s.hidden=!v;s.querySelector('small').textContent=v});n.textContent=ids.size});
+const pages=[...document.querySelectorAll('section')],btns=[...document.querySelectorAll('nav [data-i]')],
+q=document.getElementById('q'),n=document.getElementById('n'),total=+n.textContent;
+let cur=0;
+function show(i){cur=(i+pages.length)%pages.length;
+pages.forEach((s,j)=>s.hidden=j!==cur);
+btns.forEach((b,j)=>b.classList.toggle('on',j===cur));}
+btns.forEach((b,j)=>b.onclick=()=>show(j));
+document.getElementById('prev').onclick=()=>show(cur-1);
+document.getElementById('next').onclick=()=>show(cur+1);
+document.addEventListener('keydown',e=>{if(e.target===q)return;
+if(e.key==='ArrowRight')show(cur+1);if(e.key==='ArrowLeft')show(cur-1);});
+function apply(){const t=q.value.toLowerCase().split(/\\s+/).filter(Boolean);const seen=new Set();
+pages.forEach((s,j)=>{let vis=0;
+s.querySelectorAll('li').forEach(r=>{const ok=t.every(x=>r.dataset.s.includes(x));r.hidden=!ok;
+if(ok){vis++;if(t.length)seen.add(r.dataset.id)}});
+btns[j].querySelector('small').textContent=t.length?vis:s.dataset.total;
+btns[j].hidden=!!t.length&&vis===0});
+if(t.length&&btns[cur].hidden){const f=btns.findIndex(b=>!b.hidden);show(f>=0?f:0);}
+n.textContent=t.length?seen.size:total;}
+q.addEventListener('input',apply);
+apply();show(0);
 """
+
+
+def _hue(name: str) -> int:
+    """Tonalità 0-359 deterministica per assegnare un colore diverso a ogni tag."""
+    h = 0
+    for c in name.lower():
+        h = (h * 31 + ord(c)) % 997
+    return h % 360
 
 
 def _row(b: Bookmark, section: str | None = None) -> str:
@@ -73,13 +102,23 @@ def group_by_tag(items: list[Bookmark]) -> list[tuple[str | None, list[Bookmark]
 
 
 def export_html(items: list[Bookmark], title: str = "Bookmarks") -> str:
-    sections = []
-    for tag, group in group_by_tag(items):
+    """Pagina a schede: un tag per pagina (navigabile con le frecce o i tasti ←/→),
+    ogni tag con il proprio colore di sfondo, nessuna scroll della pagina."""
+    groups = group_by_tag(items)
+    sections, chips = [], []
+    for i, (tag, group) in enumerate(groups):
         heading = f"#{escape(tag)}" if tag else '<span class="none">Senza tag</span>'
+        hue = _hue(tag if tag else "senza tag")
+        hidden = " hidden" if i else ""
         sections.append(
-            f"<section><h2>{heading}<small>{len(group)}</small></h2>"
+            f'<section data-total="{len(group)}" style="--h:{hue}"{hidden}>'
+            f"<h2>{heading}<small>{len(group)}</small></h2>"
             f"<ul>{''.join(_row(b, tag) for b in group)}</ul></section>"
         )
+        on = " class='on'" if i == 0 else ""
+        chips.append(f'<button data-i="{i}"{on}>{heading}<small>{len(group)}</small></button>')
+    nav = '<button id="prev" title="Sezione precedente (←)">‹</button>' + "".join(chips) + \
+        '<button id="next" title="Sezione successiva (→)">›</button>'
     stamp = datetime.now().strftime("%d/%m/%Y")
     return (
         f'<!doctype html>\n<html lang="it"><head><meta charset="utf-8">'
@@ -87,9 +126,9 @@ def export_html(items: list[Bookmark], title: str = "Bookmarks") -> str:
         f'<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; script-src \'unsafe-inline\'">'
         f"<title>{escape(title)}</title><style>{_CSS}</style></head><body><main>"
         f"<h1>{escape(title)}</h1>"
-        f'<p class="sub"><span id="n">{len(items)}</span> link · {max(len(sections), 0)} sezioni · aggiornato il {stamp}</p>'
+        f'<p class="sub"><span id="n">{len(items)}</span> link · {len(groups)} sezioni · aggiornato il {stamp}</p>'
         f'<input id="q" type="search" placeholder="Cerca per nome, indirizzo o tag…" autofocus>'
-        f'<div class="cols">{"".join(sections)}</div><script>{_JS}</script></main></body></html>\n'
+        f"<nav>{nav}</nav>{''.join(sections)}<script>{_JS}</script></main></body></html>\n"
     )
 
 

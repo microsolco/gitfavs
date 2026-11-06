@@ -4,7 +4,7 @@ Gestore di bookmarks da riga di comando (comando `gf`). Python ≥ 3.9, nessuna 
 
 - **Un solo file JSON** con tutti i bookmarks (`bookmarks.json`).
 - **Git automatico**: ogni modifica fa commit e, se c'è un remote, push. Non devi mai lanciare `git` a mano.
-- **Export HTML automatico**: dopo ogni modifica viene rigenerato `bookmarks.html`, una pagina minimale divisa per tag con filtro live.
+- **Export HTML automatico**: dopo ogni modifica viene rigenerato `bookmarks.html`: una pagina a schede (un tag per pagina, navigabile con i pulsanti o ←/→) con un colore diverso per tag e filtro live.
 - **Output a colori** (disattivabili con `NO_COLOR`), con i termini cercati evidenziati.
 
 ## Come funziona

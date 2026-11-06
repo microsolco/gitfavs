@@ -11,8 +11,7 @@ from pathlib import Path
 from .store import GitFavsError, Bookmark, is_safe_href, normalize_tags, normalize_url
 
 _CSS = """
-:root{--bg:#f0efec;--fg:#1c1917;--mut:#78716c;--line:#e2e0db;--acc:#2563eb}
-@media(prefers-color-scheme:dark){:root{--bg:#161514;--fg:#e7e5e4;--mut:#a8a29e;--line:#2b2927;--acc:#7aa2f7}}
+:root{--bg:#161514;--fg:#ece9e6;--mut:#b6afa6;--line:#45413c;--acc:#8cb4ff}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
@@ -22,13 +21,11 @@ h1{font-size:1.5rem;margin:0 0 .25rem;letter-spacing:-.01em}
 input{width:100%;max-width:28rem;padding:.6rem .8rem;font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:8px;margin-bottom:.75rem}
 input:focus{outline:2px solid var(--acc);outline-offset:1px}
 nav{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin-bottom:.9rem}
-nav button{cursor:pointer;font:inherit;font-size:.8125rem;color:var(--mut);background:transparent;border:1px solid var(--line);border-radius:999px;padding:.3rem .75rem}
+nav button{cursor:pointer;font:inherit;font-size:.8125rem;color:#d6d1cb;background:#242220;border:1px solid var(--line);border-radius:999px;padding:.3rem .75rem}
 nav button:hover{color:var(--fg)}
 nav button.on{background:var(--fg);border-color:var(--fg);color:var(--bg)}
-nav button small{margin-left:.4em;opacity:.65}
-#prev{margin-left:auto}
-section{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:hsl(var(--h,220) 45% 80% / .4)}
-@media(prefers-color-scheme:dark){section{background:hsl(var(--h,220) 35% 30% / .35)}}
+nav button small{margin-left:.4em;opacity:.75}
+section{flex:1;min-height:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:hsl(var(--h,220) 32% 22% / .55)}
 h2{display:flex;align-items:baseline;gap:.5rem;margin:0;padding:.75rem 1rem .5rem;font-size:.9375rem}
 h2 small{color:var(--mut);font-size:.75rem;font-weight:400}
 .none{color:var(--mut)}
@@ -50,8 +47,6 @@ function show(i){cur=(i+pages.length)%pages.length;
 pages.forEach((s,j)=>s.hidden=j!==cur);
 btns.forEach((b,j)=>b.classList.toggle('on',j===cur));}
 btns.forEach((b,j)=>b.onclick=()=>show(j));
-document.getElementById('prev').onclick=()=>show(cur-1);
-document.getElementById('next').onclick=()=>show(cur+1);
 document.addEventListener('keydown',e=>{if(e.target===q)return;
 if(e.key==='ArrowRight')show(cur+1);if(e.key==='ArrowLeft')show(cur-1);});
 function apply(){const t=q.value.toLowerCase().split(/\\s+/).filter(Boolean);const seen=new Set();
@@ -117,8 +112,7 @@ def export_html(items: list[Bookmark], title: str = "Bookmarks") -> str:
         )
         on = " class='on'" if i == 0 else ""
         chips.append(f'<button data-i="{i}"{on}>{heading}<small>{len(group)}</small></button>')
-    nav = '<button id="prev" title="Sezione precedente (←)">‹</button>' + "".join(chips) + \
-        '<button id="next" title="Sezione successiva (→)">›</button>'
+    nav = "".join(chips)
     stamp = datetime.now().strftime("%d/%m/%Y")
     return (
         f'<!doctype html>\n<html lang="it"><head><meta charset="utf-8">'
